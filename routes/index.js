@@ -87,6 +87,11 @@ app.get("/", async (req, res) => {
 	console.log(users);
 });
 
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
+
+
 app.post("/signup", async (req, res) => {
 	console.log("signuping....");
 	let { password, username, fullname, email } = req.body;
