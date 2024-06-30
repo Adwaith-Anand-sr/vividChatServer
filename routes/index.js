@@ -167,6 +167,7 @@ app.get("/getAllUsers", async (req, res) => {
 	let users = await userModel.find();
 	res.status(200).json({
 		success: true,
+		status: 'ok',
 		message: "get all user successfully.",
 		users
 	});
