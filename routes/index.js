@@ -83,9 +83,6 @@ io.on("connection", socket => {
 	});
 });
 
-app.get("/", async (req, res) => {
-	console.log(users);
-});
 
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
