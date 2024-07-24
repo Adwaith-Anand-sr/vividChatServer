@@ -106,7 +106,7 @@ app.post("/signup", async (req, res) => {
 				password: hash,
 				email
 			});
-			let token = jwt.sign({ username, email }, "WTF");
+			let token = jwt.sign({ username, email }, "WTF", { expiresIn: '30d' });
 			res.cookie("token", token);
 			req.user = user;
 			res.status(200).json({
@@ -130,7 +130,7 @@ app.post("/signin", async (req, res) => {
 	}
 	bcrypt.compare(password, user.password, (err, result) => {
 		if (result) {
-			let token = jwt.sign({ email: user.email, username }, "WTF");
+			let token = jwt.sign({ email: user.email, username }, "WTF", { expiresIn: '30d' });
 			res.cookie("token", token);
 			req.user = user;
 			res.status(200).json({
