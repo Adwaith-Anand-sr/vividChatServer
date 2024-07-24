@@ -88,7 +88,7 @@ app.get("/health", (req, res) => {
 });
 
 app.post("/signup", async (req, res) => {
-	let { password, username, fullname, email } = req.body;
+	let { password, username, email } = req.body;
 	let existUser = await userModel.findOne({ username });
 	if (existUser) {
 		res.status(400).json({
@@ -102,7 +102,6 @@ app.post("/signup", async (req, res) => {
 		bcrypt.hash(password, salt, async (err, hash) => {
 			const user = await userModel.create({
 				username,
-				fullname,
 				password: hash,
 				email
 			});
