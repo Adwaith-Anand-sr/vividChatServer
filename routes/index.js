@@ -160,7 +160,7 @@ app.post("/getUser", async (req, res) => {
 				user
 			});
 		}else {
-		   res.status(200).json({
+		   res.status(400).json({
 				success: false,
 				message: "no user found!",
 			});
