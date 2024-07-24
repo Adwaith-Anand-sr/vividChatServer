@@ -123,7 +123,7 @@ app.post("/signin", async (req, res) => {
 	const user = await userModel.findOne({ username });
 
 	if (!user) {
-		return res.status(300).json({
+		return res.status(200).json({
 			success: false,
 			message: "invalid username!"
 		});
