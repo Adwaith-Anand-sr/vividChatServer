@@ -152,6 +152,7 @@ app.post("/signin", async (req, res) => {
 
 app.post("/getUser", async (req, res) => {
 	try {
+	   console.log('userId ',req.body.userId)
 		let user = await userModel.findOne({ _id: req.body.userId });
 		if (user) {
 			res.status(200).json({
