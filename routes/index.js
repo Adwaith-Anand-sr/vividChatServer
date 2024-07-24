@@ -83,11 +83,9 @@ io.on("connection", socket => {
 	});
 });
 
-
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok' });
+app.get("/health", (req, res) => {
+	res.status(200).json({ status: "ok" });
 });
-
 
 app.post("/signup", async (req, res) => {
 	let { password, username, fullname, email } = req.body;
@@ -167,7 +165,7 @@ app.get("/getAllUsers", async (req, res) => {
 	let users = await userModel.find();
 	res.status(200).json({
 		success: true,
-		status: 'ok',
+		status: "ok",
 		message: "get all user successfully.",
 		users
 	});
@@ -192,7 +190,7 @@ app.post("/getRecentUsers", async (req, res) => {
 		console.log("err: ", err);
 		res.status(500).json({
 			success: false,
-			message: "get recent user failed.",
+			message: "get recent user failed."
 		});
 	}
 });
