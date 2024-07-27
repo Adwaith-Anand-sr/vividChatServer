@@ -49,16 +49,6 @@ io.on("connection", socket => {
 	});
 });
 
-app.get("/getMessages/:userId1/:userId2", (req, res) => {
-	const { userId1, userId2 } = req.params;
-	const conversationId = getConversationId(userId1, userId2);
-	const ref = db.ref(`messages/${conversationId}`);
-
-	ref.once("value", snapshot => {
-		const messages = snapshot.val() ? Object.values(snapshot.val()) : [];
-		res.status(200).send(messages);
-	}).catch(error => res.status(500).send(error));
-});
 
 app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
@@ -129,7 +119,11 @@ app.post("/signin", async (req, res) => {
 
 app.post("/getUser", async (req, res) => {
 	try {
+<<<<<<< HEAD
 		console.log("userId ", req.body.userId);
+=======
+	   console.log('userId ',req.body.userId)
+>>>>>>> origin/main
 		let user = await userModel.findOne({ _id: req.body.userId });
 		if (user) {
 			res.status(200).json({
@@ -137,12 +131,21 @@ app.post("/getUser", async (req, res) => {
 				message: "get user successfully.",
 				user
 			});
+<<<<<<< HEAD
 		} else {
 			res.status(400).json({
 				success: false,
 				message: "no user found!"
 			});
 		}
+=======
+		}else {
+		   res.status(400).json({
+				success: false,
+				message: "no user found!",
+			});
+		} 
+>>>>>>> origin/main
 	} catch (err) {
 		console.log("err: ", err);
 	}
