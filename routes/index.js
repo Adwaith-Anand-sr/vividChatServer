@@ -8,8 +8,13 @@ const mongodbConfig = require("../config/mongoose.js");
 
 const userModel = require("../models/users.js");
 const chatModel = require("../models/chats.js");
+const db = require("./../config/firebase.js");
 
 let users = [];
+
+const getConversationId = (userId1, userId2) => {
+	return [userId1, userId2].sort().join("_");
+};
 
 io.on("connection", socket => {
 	socket.on("join", userId => {
@@ -19,68 +24,40 @@ io.on("connection", socket => {
 		}
 		users.push({ id: socket.id, userId });
 	});
-	socket.on("sendMessage", async ({ sender, receiver, message }) => {
-		let chat = await chatModel.create({
-			sender,
-			receiver,
-			message
-		});
-		const receiverSocketId = users.find(user => user.userId === receiver)?.id;
-		if (receiverSocketId)
-			io.to(receiverSocketId).emit("receiveMessage", chat);
-		socket.emit("sendMessage", chat);
 
-		let user1 = await userModel.findOne({ _id: sender });
-		let user2 = await userModel.findOne({ _id: receiver });
-		if (user1) {
-			if (!user1.recent.includes(user2._id)) {
-				user1.recent.push(user2._id);
-				await user1.save();
-			}
-		}
-		if (user2) {
-			if (!user2.recent.includes(user1._id)) {
-				user2.recent.push(user1._id);
-				await user2.save();
-			}
-		}
-	});
-	socket.on("seenMessage", async chat => {
-		try {
-			let message = await chatModel.findOne({ _id: chat._id });
-			if (message) {
-				message.isreaded = true;
-				await message.save();
-				const senderSocketId = users.find(
-					user => user.userId === message.sender.toString()
-				)?.id;
-				if (senderSocketId)
-					io.to(senderSocketId).emit("seenMessage", message);
-			}
-		} catch (err) {
-			console.log("err: ", err);
-		}
-	});
-	socket.on("seenAllMessages", async ({ userId, oppId }) => {
-		let messages = await chatModel.find({
-			$or: [{ sender: oppId, receiver: userId }]
-		});
-		if (messages && messages.length > 0) {
-			messages.map(async message => {
-				message.isreaded = true;
-				await message.save();
-				const senderSocketId = users.find(
-					user => user.userId === oppId.toString()
-				)?.id;
-				if (senderSocketId)
-					io.to(senderSocketId).emit("seenMessage", message);
-			});
-		}
+	socket.on("sendMessage", dets => {
+		const { senderId, receiverId, message } = dets;
+		const conversationId = getConversationId(senderId, receiverId);
+		const messageData = {
+			senderId,
+			receiverId,
+			message,
+			createdAt: Date.now()
+		};
+
+		const ref = db.ref(`messages/${conversationId}`);
+		ref.push(messageData)
+			.then(() => {
+				io.emit("receiveMessage", data);
+				res.status(200).send("Message sent successfully");
+			})
+			.catch(error => res.status(500).send(error));
 	});
 
 	socket.on("disconnect", () => {
 		users = users.filter(user => user.id !== socket.id);
 	});
+});
+
+app.get("/getMessages/:userId1/:userId2", (req, res) => {
+	const { userId1, userId2 } = req.params;
+	const conversationId = getConversationId(userId1, userId2);
+	const ref = db.ref(`messages/${conversationId}`);
+
+	ref.once("value", snapshot => {
+		const messages = snapshot.val() ? Object.values(snapshot.val()) : [];
+		res.status(200).send(messages);
+	}).catch(error => res.status(500).send(error));
 });
 
 app.get("/health", (req, res) => {
@@ -152,7 +129,7 @@ app.post("/signin", async (req, res) => {
 
 app.post("/getUser", async (req, res) => {
 	try {
-	   console.log('userId ',req.body.userId)
+		console.log("userId ", req.body.userId);
 		let user = await userModel.findOne({ _id: req.body.userId });
 		if (user) {
 			res.status(200).json({
@@ -160,12 +137,12 @@ app.post("/getUser", async (req, res) => {
 				message: "get user successfully.",
 				user
 			});
-		}else {
-		   res.status(400).json({
+		} else {
+			res.status(400).json({
 				success: false,
-				message: "no user found!",
+				message: "no user found!"
 			});
-		} 
+		}
 	} catch (err) {
 		console.log("err: ", err);
 	}
