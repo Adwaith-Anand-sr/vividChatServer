@@ -49,7 +49,6 @@ io.on("connection", socket => {
 	});
 });
 
-
 app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
 });
@@ -120,7 +119,7 @@ app.post("/signin", async (req, res) => {
 app.post("/getUser", async (req, res) => {
 	try {
 		console.log("userId ", req.body.userId);
-	   console.log('userId ',req.body.userId)
+		console.log("userId ", req.body.userId);
 		let user = await userModel.findOne({ _id: req.body.userId });
 		if (user) {
 			res.status(200).json({
@@ -134,12 +133,6 @@ app.post("/getUser", async (req, res) => {
 				message: "no user found!"
 			});
 		}
-		}else {
-		   res.status(400).json({
-				success: false,
-				message: "no user found!",
-			});
-		} 
 	} catch (err) {
 		console.log("err: ", err);
 	}
