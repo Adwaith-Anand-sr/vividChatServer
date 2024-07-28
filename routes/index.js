@@ -14,7 +14,6 @@ const db = require("./../config/firebase.js");
 let users = [];
 
 const getConversationId = (userId1, userId2) => {
-   console.log(userId1)
 	return [userId1, userId2].sort().join("_");
 };
 
@@ -29,7 +28,6 @@ io.on("connection", socket => {
 
 	socket.on("sendMessage", dets => {
 		const { senderId, receiverId, message } = dets;
-		console.log(dets);
 		const conversationId = getConversationId(senderId, receiverId);
 		const messageData = {
 		   id: uuidv4(),
@@ -38,11 +36,10 @@ io.on("connection", socket => {
 			message,
 			createdAt: Date.now()
 		};
-		console.log(conversationId);
 		const ref = db.ref(`messages/${conversationId}`);
 		ref.push(messageData)
 			.then(() => {
-				io.emit("receiveMessage");
+				io.emit("receiveMessage", messageData);
 			})
 			.catch(error => res.status(500).send(error));
 	});
