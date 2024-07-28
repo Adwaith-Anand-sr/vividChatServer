@@ -11,7 +11,7 @@ const io = new Server(server, {
 			"http://localhost:5173",
 			"http://localhost:8081",
 			"exp://127.0.0.1:8081",
-			"exp://10.26.6.170:8081", //local device (changeable)
+			"exp://10.161.232.167:8081" //local device (changeable)
 		]
 	}
 });
@@ -23,13 +23,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use(
 	cors({
 		origin: [
-			"http://localhost:5173",
-			"http://localhost:8081",
-			"exp://127.0.0.1:8081",
-			"exp://10.26.6.170:8081", //local device (changeable)
+			"http://localhost:5173", 
+			"http://localhost:8081", 
+			"exp://127.0.0.1:8081", 
+			"exp://10.161.232.167:8081" 
 		]
 	})
 );
+
 app.use(express.static(path.join(__dirname, "public")));
 
 module.exports = { server, io, app };

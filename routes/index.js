@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookie = require("cookie-parser");
+const { v4: uuidv4 } = require('uuid');
 
 const { server, app, io } = require("../server.js");
 const mongodbConfig = require("../config/mongoose.js");
@@ -13,6 +14,7 @@ const db = require("./../config/firebase.js");
 let users = [];
 
 const getConversationId = (userId1, userId2) => {
+   console.log(userId1)
 	return [userId1, userId2].sort().join("_");
 };
 
@@ -27,19 +29,20 @@ io.on("connection", socket => {
 
 	socket.on("sendMessage", dets => {
 		const { senderId, receiverId, message } = dets;
+		console.log(dets);
 		const conversationId = getConversationId(senderId, receiverId);
 		const messageData = {
+		   id: uuidv4(),
 			senderId,
 			receiverId,
 			message,
 			createdAt: Date.now()
 		};
-
+		console.log(conversationId);
 		const ref = db.ref(`messages/${conversationId}`);
 		ref.push(messageData)
 			.then(() => {
-				io.emit("receiveMessage", data);
-				res.status(200).send("Message sent successfully");
+				io.emit("receiveMessage");
 			})
 			.catch(error => res.status(500).send(error));
 	});
@@ -118,9 +121,7 @@ app.post("/signin", async (req, res) => {
 
 app.post("/getUser", async (req, res) => {
 	try {
-		console.log("userId ", req.body.userId);
-		console.log("userId ", req.body.userId);
-		let user = await userModel.findOne({ _id: req.body.userId });
+		let user = await userModel.findOne({ _id: req.body.chatPartnerId });
 		if (user) {
 			res.status(200).json({
 				success: true,
