@@ -2,14 +2,13 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookie = require("cookie-parser");
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require("uuid");
 
 const { server, app, io } = require("../server.js");
 const mongodbConfig = require("../config/mongoose.js");
 
 const userModel = require("../models/users.js");
 const chatModel = require("../models/chats.js");
-const db = require("./../config/firebase.js");
 
 let users = [];
 
@@ -17,70 +16,80 @@ const getConversationId = (userId1, userId2) => {
 	return [userId1, userId2].sort().join("_");
 };
 
-io.on("connection", socket => {
-	socket.on("join", userId => {
-		const existingUserIndex = users.findIndex(user => user.userId === userId);
-		if (existingUserIndex !== -1) {
-			users.splice(existingUserIndex, 1);
-		}
-		users.push({ id: socket.id, userId });
-	});
+// io.on("connection", socket => {
+// 	socket.on("join", userId => {
+// 		const existingUserIndex = users.findIndex(user => user.userId === userId);
+// 		if (existingUserIndex !== -1) {
+// 			users.splice(existingUserIndex, 1);
+// 		}
+// 		users.push({ id: socket.id, userId });
+// 	});
 
-	socket.on("sendMessage", dets => {
-		const { senderId, receiverId, message } = dets;
-		const conversationId = getConversationId(senderId, receiverId);
-		const messageData = {
-		   id: uuidv4(),
-			senderId,
-			receiverId,
-			message,
-			createdAt: Date.now()
-		};
-		const ref = db.ref(`messages/${conversationId}`);
-		ref.push(messageData)
-			.then(() => {
-				io.emit("receiveMessage", messageData);
-			})
-			.catch(error => res.status(500).send(error));
-	});
+// 	socket.on("sendMessage", dets => {
+// 		const { senderId, receiverId, message } = dets;
+// 		const conversationId = getConversationId(senderId, receiverId);
+// 		const messageData = {
+// 		   id: uuidv4(),
+// 			senderId,
+// 			receiverId,
+// 			message,
+// 			createdAt: Date.now()
+// 		};
+// 		const ref = db.ref(`messages/${conversationId}`);
+// 		ref.push(messageData)
+// 			.then(() => {
+// 				io.emit("receiveMessage", messageData);
+// 			})
+// 			.catch(error => res.status(500).send(error));
+// 	});
 
-	socket.on("disconnect", () => {
-		users = users.filter(user => user.id !== socket.id);
-	});
-});
+// 	socket.on("disconnect", () => {
+// 		users = users.filter(user => user.id !== socket.id);
+// 	});
+// });
 
 app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
+	console.log("first");
 });
 
 app.post("/signup", async (req, res) => {
-	let { password, username, email } = req.body;
-	let existUser = await userModel.findOne({ username });
-	if (existUser) {
-		res.status(400).json({
+	try {
+		let { password, username, email } = req.body;
+		let existUser = await userModel.findOne({ username });
+		if (existUser) {
+			res.status(400).json({
+				success: false,
+				message: "USERNAME_EXISTS",
+				data: { username, email }
+			});
+			return;
+		}
+		bcrypt.genSalt(10, (err, salt) => {
+			bcrypt.hash(password, salt, async (err, hash) => {
+				const user = await userModel.create({
+					username,
+					password: hash,
+					email
+				});
+				let token = jwt.sign({ username, email }, "WTF", {
+					expiresIn: "30d"
+				});
+				res.cookie("token", token);
+				req.user = user;
+				res.status(200).json({
+					success: true,
+					message: "User signed up successfully",
+					data: { username, email, token, userId: user._id }
+				});
+			});
+		});
+	} catch (err) {
+	   return res.status(400).json({
 			success: false,
-			message: "User already exists",
-			data: { username, email }
+			message: err,
 		});
-		return;
 	}
-	bcrypt.genSalt(10, (err, salt) => {
-		bcrypt.hash(password, salt, async (err, hash) => {
-			const user = await userModel.create({
-				username,
-				password: hash,
-				email
-			});
-			let token = jwt.sign({ username, email }, "WTF", { expiresIn: "30d" });
-			res.cookie("token", token);
-			req.user = user;
-			res.status(200).json({
-				success: true,
-				message: "User signed up successfully",
-				data: { username, email, token, userId: user._id }
-			});
-		});
-	});
 });
 
 app.post("/signin", async (req, res) => {
@@ -88,11 +97,10 @@ app.post("/signin", async (req, res) => {
 	const user = await userModel.findOne({ username });
 
 	if (!user) {
-		res.status(400).json({
+		return res.status(400).json({
 			success: false,
-			message: "invalid username!"
+			message: "INVALID_USERNAME"
 		});
-		return;
 	}
 	bcrypt.compare(password, user.password, (err, result) => {
 		if (result) {
@@ -110,7 +118,7 @@ app.post("/signin", async (req, res) => {
 		} else {
 			return res.status(400).json({
 				success: false,
-				message: "invalid password!"
+				message: "INVALID_PASSWORD"
 			});
 		}
 	});
