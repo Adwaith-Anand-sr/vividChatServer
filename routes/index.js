@@ -25,12 +25,12 @@ io.on("connection", socket => {
 		if (offlineMessages.length > 0) {
 			offlineMessages.forEach(async msg => {
 				socket.emit("receiveMessage", msg.message);
-				await Chat.updateOne(
+				await chatModel.updateOne(
 					{ chatId: msg.chatId, "messages.message": msg.message },
 					{ $set: { "messages.$.status": "delivered" } }
 				);
 			});
-			await OfflineMessage.deleteMany({ receiver: userId });
+			await offlineModel.deleteMany({ receiver: userId });
 		}
 	});
 
