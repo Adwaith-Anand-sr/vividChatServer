@@ -26,8 +26,15 @@ io.on("connection", socket => {
 	});
 	
 	
-   socket.on('hey', ()=>{
-      socket.emit("hoi");
+   socket.on('getAllUsers', async() =>{
+      try{
+         let allUsers = await userModel.find();
+         console.log("users: ", allUsers)
+         console.log("socket : ", socket)
+         console.log("users : ", users)
+      }catch(error){
+         console.log(error);
+      }
    })
    
 	socket.on("sendMessage", dets => {
