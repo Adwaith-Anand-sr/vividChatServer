@@ -34,7 +34,7 @@ io.on("connection", socket => {
 	//    }
 	// })
 
-	socket.on("getAllUsers", async ({ page=1, limit=10}) => {
+	socket.on("getAllUsers", async ({ page = 1, limit = 10 }) => {
 		try {
 			const users = await User.find()
 				.skip((page - 1) * limit)
@@ -46,7 +46,7 @@ io.on("connection", socket => {
 			socket.emit("getAllUsersRes", []);
 		}
 	});
-	
+
 	socket.on("sendMessage", dets => {
 		const { senderId, receiverId, message } = dets;
 		const conversationId = getConversationId(senderId, receiverId);
@@ -74,20 +74,23 @@ app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
 });
 
-app.get('/api/messages', async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
-  const pageNumber = parseInt(page, 10) || 1;
-  const pageSize = parseInt(limit, 10) || 10;
-
-  try {
-    const messages = await users.find({})
-      .sort({ timestamp: -1 })
-      .skip((pageNumber - 1) * pageSize)
-      .limit(pageSize);
-    res.json(messages);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch messages' });
-  }
+app.get("/api", async (req, res) => {
+	const { page = 1, limit = 10 } = req.query;
+	const pageNumber = parseInt(page, 10) || 1;
+	const pageSize = parseInt(limit, 10) || 10;
+	console.log("pageNumber", pageNumber);
+	console.log("pageSize", pageSize);
+	try {
+		const messages = await userModel
+			.find({})
+			.sort({ timestamp: -1 })
+			.skip((pageNumber - 1) * pageSize)
+			.limit(pageSize);
+		console.log("messages", messages);
+		res.json(messages);
+	} catch (err) {
+		res.status(500).json({ error: "Failed to fetch messages" });
+	}
 });
 
 app.post("/signup", async (req, res) => {
