@@ -25,8 +25,11 @@ io.on("connection", socket => {
 		users.push({ id: socket.id, userId });
 	});
 	
-	socket.emit("hoi");
-
+	
+   socket.on('hey', ()=>{
+      socket.emit("hoi");
+   })
+   
 	socket.on("sendMessage", dets => {
 		const { senderId, receiverId, message } = dets;
 		const conversationId = getConversationId(senderId, receiverId);
