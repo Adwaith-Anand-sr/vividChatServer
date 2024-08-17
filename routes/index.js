@@ -24,25 +24,35 @@ io.on("connection", socket => {
 		}
 		users.push({ id: socket.id, userId });
 	});
+
+	// socket.on('getAllUsers', async() =>{
+	//    try{
+	//       let allUsers = await userModel.find();
+	//       socket.emit('getAllUsersRes', allUsers)
+	//    }catch(error){
+	//       console.log(error);
+	//    }
+	// })
+
+	socket.on("getAllUsers", async ({ page, limit }) => {
+		try {
+			const users = await User.find()
+				.skip((page - 1) * limit)
+				.limit(limit)
+				.exec();
+
+			socket.emit("getAllUsersRes", users);
+		} catch (error) {
+			console.error("Error fetching users:", error);
+			socket.emit("getAllUsersRes", []);
+		}
+	});
 	
-	
-   socket.on('getAllUsers', async() =>{
-      try{
-         let allUsers = await userModel.find();
-         console.log("users: ", allUsers)
-         console.log("socket : ", socket.id)
-         console.log("users : ", users)
-         socket.emit('getAllUsersRes', allUsers)
-      }catch(error){
-         console.log(error);
-      }
-   })
-   
 	socket.on("sendMessage", dets => {
 		const { senderId, receiverId, message } = dets;
 		const conversationId = getConversationId(senderId, receiverId);
 		const messageData = {
-		   id: uuidv4(),
+			id: uuidv4(),
 			senderId,
 			receiverId,
 			message,
@@ -63,7 +73,6 @@ io.on("connection", socket => {
 
 app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
-	console.log("first");
 });
 
 app.post("/signup", async (req, res) => {
@@ -98,9 +107,9 @@ app.post("/signup", async (req, res) => {
 			});
 		});
 	} catch (err) {
-	   return res.status(400).json({
+		return res.status(400).json({
 			success: false,
-			message: err,
+			message: err
 		});
 	}
 });
