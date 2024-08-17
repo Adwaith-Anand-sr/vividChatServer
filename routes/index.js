@@ -16,37 +16,39 @@ const getConversationId = (userId1, userId2) => {
 	return [userId1, userId2].sort().join("_");
 };
 
-// io.on("connection", socket => {
-// 	socket.on("join", userId => {
-// 		const existingUserIndex = users.findIndex(user => user.userId === userId);
-// 		if (existingUserIndex !== -1) {
-// 			users.splice(existingUserIndex, 1);
-// 		}
-// 		users.push({ id: socket.id, userId });
-// 	});
+io.on("connection", socket => {
+	socket.on("join", userId => {
+		const existingUserIndex = users.findIndex(user => user.userId === userId);
+		if (existingUserIndex !== -1) {
+			users.splice(existingUserIndex, 1);
+		}
+		users.push({ id: socket.id, userId });
+	});
+	
+	socket.emit("hoi");
 
-// 	socket.on("sendMessage", dets => {
-// 		const { senderId, receiverId, message } = dets;
-// 		const conversationId = getConversationId(senderId, receiverId);
-// 		const messageData = {
-// 		   id: uuidv4(),
-// 			senderId,
-// 			receiverId,
-// 			message,
-// 			createdAt: Date.now()
-// 		};
-// 		const ref = db.ref(`messages/${conversationId}`);
-// 		ref.push(messageData)
-// 			.then(() => {
-// 				io.emit("receiveMessage", messageData);
-// 			})
-// 			.catch(error => res.status(500).send(error));
-// 	});
+	socket.on("sendMessage", dets => {
+		const { senderId, receiverId, message } = dets;
+		const conversationId = getConversationId(senderId, receiverId);
+		const messageData = {
+		   id: uuidv4(),
+			senderId,
+			receiverId,
+			message,
+			createdAt: Date.now()
+		};
+		const ref = db.ref(`messages/${conversationId}`);
+		ref.push(messageData)
+			.then(() => {
+				io.emit("receiveMessage", messageData);
+			})
+			.catch(error => res.status(500).send(error));
+	});
 
-// 	socket.on("disconnect", () => {
-// 		users = users.filter(user => user.id !== socket.id);
-// 	});
-// });
+	socket.on("disconnect", () => {
+		users = users.filter(user => user.id !== socket.id);
+	});
+});
 
 app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
