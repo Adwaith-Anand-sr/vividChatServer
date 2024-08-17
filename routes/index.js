@@ -36,10 +36,11 @@ io.on("connection", socket => {
 
 	socket.on("getAllUsers", async ({ page = 1, limit = 10 }) => {
 		try {
+		   const pageNumber = parseInt(page, 10) || 1;
+	      const pageSize = parseInt(limit, 10) || 10;
 			const users = await User.find()
-				.skip((page - 1) * limit)
-				.limit(limit)
-				.exec();
+				.skip((pageNumber - 1) * pageSize)
+				.limit(pageSize)
 			socket.emit("getAllUsersRes", users);
 		} catch (error) {
 			console.error("Error fetching users:", error);
