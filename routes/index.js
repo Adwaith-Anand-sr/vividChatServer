@@ -25,30 +25,18 @@ io.on("connection", socket => {
 		users.push({ id: socket.id, userId });
 	});
 
-	// socket.on('getAllUsers', async() =>{
-	//    try{
-	//       let allUsers = await userModel.find();
-	//       socket.emit('getAllUsersRes', allUsers)
-	//    }catch(error){
-	//       console.log(error);
-	//    }
-	// })
-
 	socket.on("getAllUsers", async ({ page = 1, limit = 10 }) => {
 		const pageNumber = parseInt(page, 10) || 1;
 		const pageSize = parseInt(limit, 10) || 10;
-		console.log("pageNumber", pageNumber);
-		console.log("pageSize", pageSize);
 		try {
 			const allUsers = await userModel
 				.find({})
 				.sort({ timestamp: -1 })
 				.skip((pageNumber - 1) * pageSize)
 				.limit(pageSize);
-			console.log("allUsers", allUsers);
-			res.json(allUsers);
+			socket.emit('getAllUsersRes', allUsers)
 		} catch (err) {
-			res.status(500).json({ error: "Failed to fetch messages" });
+			socket.emit('getAllUsersRes', [])
 		}
 	});
 
