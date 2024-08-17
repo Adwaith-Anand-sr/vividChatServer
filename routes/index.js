@@ -34,13 +34,12 @@ io.on("connection", socket => {
 	//    }
 	// })
 
-	socket.on("getAllUsers", async ({ page, limit }) => {
+	socket.on("getAllUsers", async ({ page=1, limit=10}) => {
 		try {
 			const users = await User.find()
 				.skip((page - 1) * limit)
 				.limit(limit)
 				.exec();
-
 			socket.emit("getAllUsersRes", users);
 		} catch (error) {
 			console.error("Error fetching users:", error);
@@ -73,6 +72,22 @@ io.on("connection", socket => {
 
 app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
+});
+
+app.get('/api/messages', async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const pageNumber = parseInt(page, 10) || 1;
+  const pageSize = parseInt(limit, 10) || 10;
+
+  try {
+    const messages = await users.find({})
+      .sort({ timestamp: -1 })
+      .skip((pageNumber - 1) * pageSize)
+      .limit(pageSize);
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
 });
 
 app.post("/signup", async (req, res) => {
