@@ -30,8 +30,9 @@ io.on("connection", socket => {
       try{
          let allUsers = await userModel.find();
          console.log("users: ", allUsers)
-         console.log("socket : ", socket)
+         console.log("socket : ", socket.id)
          console.log("users : ", users)
+         socket.emit('getAllUsersRes', allUsers)
       }catch(error){
          console.log(error);
       }
