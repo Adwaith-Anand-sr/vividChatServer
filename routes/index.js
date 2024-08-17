@@ -35,16 +35,20 @@ io.on("connection", socket => {
 	// })
 
 	socket.on("getAllUsers", async ({ page = 1, limit = 10 }) => {
+		const pageNumber = parseInt(page, 10) || 1;
+		const pageSize = parseInt(limit, 10) || 10;
+		console.log("pageNumber", pageNumber);
+		console.log("pageSize", pageSize);
 		try {
-		   const pageNumber = parseInt(page, 10) || 1;
-	      const pageSize = parseInt(limit, 10) || 10;
-			const users = await User.find()
+			const allUsers = await userModel
+				.find({})
+				.sort({ timestamp: -1 })
 				.skip((pageNumber - 1) * pageSize)
-				.limit(pageSize)
-			socket.emit("getAllUsersRes", users);
-		} catch (error) {
-			console.error("Error fetching users:", error);
-			socket.emit("getAllUsersRes", []);
+				.limit(pageSize);
+			console.log("allUsers", allUsers);
+			res.json(allUsers);
+		} catch (err) {
+			res.status(500).json({ error: "Failed to fetch messages" });
 		}
 	});
 
