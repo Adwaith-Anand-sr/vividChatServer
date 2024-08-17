@@ -9,20 +9,29 @@ const mongodbConfig = require("../config/mongoose.js");
 
 const userModel = require("../models/users.js");
 const chatModel = require("../models/chats.js");
+const offlineModel = require("../models/offlineMessage.js");
 
 let users = [];
 
-const getConversationId = (userId1, userId2) => {
-	return [userId1, userId2].sort().join("_");
-};
-
 io.on("connection", socket => {
-	socket.on("join", userId => {
+	socket.on("join", async userId => {
 		const existingUserIndex = users.findIndex(user => user.userId === userId);
 		if (existingUserIndex !== -1) {
 			users.splice(existingUserIndex, 1);
 		}
 		users.push({ id: socket.id, userId });
+		
+		const offlineMessages = await offlineModel.find({ receiver: userId });
+		if (offlineMessages.length > 0) {
+			offlineMessages.forEach(async msg => {
+				socket.emit("receiveMessage", msg.message);
+				await Chat.updateOne(
+					{ chatId: msg.chatId, "messages.message": msg.message },
+					{ $set: { "messages.$.status": "delivered" } }
+				);
+			});
+			await OfflineMessage.deleteMany({ receiver: userId });
+		}
 	});
 
 	socket.on("getAllUsers", async ({ page = 1, limit = 10 }) => {
@@ -34,28 +43,69 @@ io.on("connection", socket => {
 				.sort({ timestamp: -1 })
 				.skip((pageNumber - 1) * pageSize)
 				.limit(pageSize);
-			socket.emit('getAllUsersRes', allUsers)
+			socket.emit("getAllUsersRes", allUsers);
 		} catch (err) {
-			socket.emit('getAllUsersRes', [])
+			socket.emit("getAllUsersRes", []);
 		}
 	});
 
-	socket.on("sendMessage", dets => {
-		const { senderId, receiverId, message } = dets;
-		const conversationId = getConversationId(senderId, receiverId);
-		const messageData = {
-			id: uuidv4(),
-			senderId,
-			receiverId,
-			message,
-			createdAt: Date.now()
-		};
-		const ref = db.ref(`messages/${conversationId}`);
-		ref.push(messageData)
-			.then(() => {
-				io.emit("receiveMessage", messageData);
-			})
-			.catch(error => res.status(500).send(error));
+	socket.on("getUser", async userId => {
+		try {
+			const user = await userModel.findById(userId);
+			socket.emit("getUserRef", user);
+		} catch (err) {
+			socket.emit("getAllUsersRes", []);
+		}
+	});
+
+	socket.on("sendMessage", async dets => {
+		const { participants, message, chatId } = dets;
+		try {
+			let chat = await chatModel.findOne({ chatId: chatId });
+			if (chat) {
+				chat.messages.push({
+					sender: participants.sender,
+					receiver: participants.receiver,
+					message,
+					status: "sent"
+				});
+				await chat.save();
+				const receiverSocket = users.find(
+					user =>
+						user.userId.toString() === participants.receiver.toString()
+				);
+				console.log(receiverSocket);
+				if (receiverSocket) {
+					io.to(receiverSocket.id).emit("receiveMessage", message);
+					chat.messages[chat.messages.length - 1].status = "delivered";
+					await chat.save();
+				} else {
+					await offlineModel.create({
+						sender: participants.sender,
+						receiver: participants.receiver,
+						message,
+						chatId
+					});
+				}
+			} else {
+				chat = await chatModel.create({
+					chatId,
+					participants: {
+						user1: participants.sender,
+						user2: participants.receiver
+					},
+					messages: [
+						{
+							sender: participants.sender,
+							receiver: participants.receiver,
+							message
+						}
+					]
+				});
+			}
+		} catch (err) {
+			console.error("Error creating chat:", err);
+		}
 	});
 
 	socket.on("disconnect", () => {
@@ -65,25 +115,6 @@ io.on("connection", socket => {
 
 app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
-});
-
-app.get("/api", async (req, res) => {
-	const { page = 1, limit = 10 } = req.query;
-	const pageNumber = parseInt(page, 10) || 1;
-	const pageSize = parseInt(limit, 10) || 10;
-	console.log("pageNumber", pageNumber);
-	console.log("pageSize", pageSize);
-	try {
-		const messages = await userModel
-			.find({})
-			.sort({ timestamp: -1 })
-			.skip((pageNumber - 1) * pageSize)
-			.limit(pageSize);
-		console.log("messages", messages);
-		res.json(messages);
-	} catch (err) {
-		res.status(500).json({ error: "Failed to fetch messages" });
-	}
 });
 
 app.post("/signup", async (req, res) => {
@@ -155,60 +186,6 @@ app.post("/signin", async (req, res) => {
 			});
 		}
 	});
-});
-
-app.post("/getUser", async (req, res) => {
-	try {
-		let user = await userModel.findOne({ _id: req.body.chatPartnerId });
-		if (user) {
-			res.status(200).json({
-				success: true,
-				message: "get user successfully.",
-				user
-			});
-		} else {
-			res.status(400).json({
-				success: false,
-				message: "no user found!"
-			});
-		}
-	} catch (err) {
-		console.log("err: ", err);
-	}
-});
-
-app.get("/getAllUsers", async (req, res) => {
-	let users = await userModel.find();
-	res.status(200).json({
-		success: true,
-		status: "ok",
-		message: "get all user successfully.",
-		users
-	});
-});
-
-app.post("/getRecentUsers", async (req, res) => {
-	try {
-		let user = await userModel.findOne({ _id: req.body.userId });
-		let users = [];
-		if (user.recent && user.recent.length > 0) {
-			for (let item of user.recent) {
-				let usr = await userModel.findOne({ _id: item });
-				users.push(usr);
-			}
-		}
-		res.status(200).json({
-			success: true,
-			message: "get recent user successfully.",
-			users
-		});
-	} catch (err) {
-		console.log("err: ", err);
-		res.status(500).json({
-			success: false,
-			message: "get recent user failed."
-		});
-	}
 });
 
 app.post("/getMassages", async (req, res) => {
