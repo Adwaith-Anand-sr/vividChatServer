@@ -52,11 +52,21 @@ io.on("connection", socket => {
 	socket.on("getUser", async userId => {
 		try {
 			const user = await userModel.findById(userId);
-			socket.emit("getUserRef", user);
+			socket.emit("getUserRes", user);
 		} catch (err) {
-			socket.emit("getAllUsersRes", []);
+			socket.emit("getUserRes", []);
 		}
 	});
+	
+	socket.on("getChatMessages", async chatId => {
+		try {
+			const chat = await chatModel.find({chatId});
+			socket.emit("getChatMessagesRes", chat);
+		} catch (err) {
+			socket.emit("getChatMessagesRes", []);
+		}
+	});
+	
 
 	socket.on("sendMessage", async dets => {
 		const { participants, message, chatId } = dets;
@@ -76,6 +86,7 @@ io.on("connection", socket => {
 				);
 				console.log(receiverSocket);
 				if (receiverSocket) {
+					socket.emit("sendMessageRes", message);
 					io.to(receiverSocket.id).emit("receiveMessage", message);
 					chat.messages[chat.messages.length - 1].status = "delivered";
 					await chat.save();
