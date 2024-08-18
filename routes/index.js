@@ -20,7 +20,7 @@ io.on("connection", socket => {
 			users.splice(existingUserIndex, 1);
 		}
 		users.push({ id: socket.id, userId });
-		
+
 		const offlineMessages = await offlineModel.find({ receiver: userId });
 		if (offlineMessages.length > 0) {
 			offlineMessages.forEach(async msg => {
@@ -57,16 +57,21 @@ io.on("connection", socket => {
 			socket.emit("getUserRes", []);
 		}
 	});
-	
-	socket.on("getChatMessages", async chatId => {
+
+	socket.on("getChatMessages", async ({ chatId, page, limit }) => {
 		try {
-			const chat = await chatModel.find({chatId});
-			socket.emit("getChatMessagesRes", chat);
-		} catch (err) {
-			socket.emit("getChatMessagesRes", []);
+			const skip = (page - 1) * limit;
+			console.log(chatId)
+			const messages = await Message.find({ chatId })
+				.skip(skip)
+				.limit(limit)
+				.sort({ createdAt: -1 });
+			socket.emit("getChatMessagesResponse", messages);
+		} catch (error) {
+			console.error("Error fetching chat messages:", error);
+			socket.emit("getChatMessagesResponse", []);
 		}
 	});
-	
 
 	socket.on("sendMessage", async dets => {
 		const { participants, message, chatId } = dets;
