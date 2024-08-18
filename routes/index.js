@@ -68,7 +68,7 @@ io.on("connection", socket => {
 			const startIndex = Math.max(totalMessages - page * limit, 0); 
 			const endIndex = totalMessages - (page - 1) * limit; 
 			const limitedMessages = chat.messages.slice(startIndex, endIndex); 
-			socket.emit("getChatMessagesResponse", limitedMessages.reverse()); 
+			socket.emit("getChatMessagesResponse", limitedMessages); 
 		} catch (error) {
 			console.error("Error fetching chat messages:", error);
 			socket.emit("getChatMessagesResponse", []);
