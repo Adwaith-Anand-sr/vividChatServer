@@ -60,13 +60,15 @@ io.on("connection", socket => {
 
 	socket.on("getChatMessages", async ({ chatId, page, limit }) => {
 		try {
-			const skip = (page - 1) * limit;
-			console.log(chatId)
-			const messages = await Message.find({ chatId })
-				.skip(skip)
-				.limit(limit)
-				.sort({ createdAt: -1 });
-			socket.emit("getChatMessagesResponse", messages);
+			const chat = await chatModel.findOne({ chatId }); 
+			if (!chat) {
+				return socket.emit("getChatMessagesResponse", []);
+			}
+			const totalMessages = chat.messages.length;
+			const startIndex = Math.max(totalMessages - page * limit, 0); 
+			const endIndex = totalMessages - (page - 1) * limit; 
+			const limitedMessages = chat.messages.slice(startIndex, endIndex); 
+			socket.emit("getChatMessagesResponse", limitedMessages.reverse()); 
 		} catch (error) {
 			console.error("Error fetching chat messages:", error);
 			socket.emit("getChatMessagesResponse", []);
@@ -89,7 +91,6 @@ io.on("connection", socket => {
 					user =>
 						user.userId.toString() === participants.receiver.toString()
 				);
-				console.log(receiverSocket);
 				if (receiverSocket) {
 					socket.emit("sendMessageRes", message);
 					io.to(receiverSocket.id).emit("receiveMessage", message);
