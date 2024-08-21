@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const { server, app, io } = require("../server.js");
 const mongodbConfig = require("../config/mongoose.js");
-
+//const redisClient = require("../config/redis.js");
 const userModel = require("../models/users.js");
 const chatModel = require("../models/chats.js");
 const offlineModel = require("../models/offlineMessage.js");
@@ -49,7 +49,7 @@ io.on("connection", socket => {
 		}
 	});
 
-	socket.on("getUser", async userId => {
+	socket.on("getUser", async (userId) => {
 		try {
 			const user = await userModel.findById(userId);
 			socket.emit("getUserRes", user);
@@ -60,22 +60,22 @@ io.on("connection", socket => {
 
 	socket.on("getChatMessages", async ({ chatId, page, limit }) => {
 		try {
-			const chat = await chatModel.findOne({ chatId }); 
+			const chat = await chatModel.findOne({ chatId });
 			if (!chat) {
 				return socket.emit("getChatMessagesResponse", []);
 			}
 			const totalMessages = chat.messages.length;
-			const startIndex = Math.max(totalMessages - page * limit, 0); 
-			const endIndex = totalMessages - (page - 1) * limit; 
-			const limitedMessages = chat.messages.slice(startIndex, endIndex); 
-			socket.emit("getChatMessagesResponse", limitedMessages); 
+			const startIndex = Math.max(totalMessages - page * limit, 0);
+			const endIndex = totalMessages - (page - 1) * limit;
+			const limitedMessages = chat.messages.slice(startIndex, endIndex);
+			return socket.emit("getChatMessagesResponse", limitedMessages);
 		} catch (error) {
 			console.error("Error fetching chat messages:", error);
 			socket.emit("getChatMessagesResponse", []);
 		}
 	});
 
-	socket.on("sendMessage", async dets => {
+	socket.on("sendMessage", async (dets) => {
 		const { participants, message, chatId } = dets;
 		try {
 			let chat = await chatModel.findOne({ chatId: chatId });
@@ -125,6 +125,32 @@ io.on("connection", socket => {
 		}
 	});
 
+	socket.on("typing", async ({ userId, chatPartnerId }) => {
+		try {
+			const receiverSocket = users.find(
+				user => user.userId.toString() === chatPartnerId.toString()
+			);
+			if (receiverSocket) {
+				io.to(receiverSocket.id).emit("typing", { chatPartnerId });
+			}
+		} catch (err) {
+			console.error("Error fetching typing status:", err);
+		}
+	});
+	
+	socket.on("typingStoped", async ({ userId, chatPartnerId }) => {
+		try {
+			const receiverSocket = users.find(
+				user => user.userId.toString() === chatPartnerId.toString()
+			);
+			if (receiverSocket) {
+				io.to(receiverSocket.id).emit("typingStoped", { chatPartnerId });
+			}
+		} catch (err) {
+			console.error("Error fetching typing status:", err);
+		}
+	});
+
 	socket.on("disconnect", () => {
 		users = users.filter(user => user.id !== socket.id);
 	});
@@ -132,6 +158,17 @@ io.on("connection", socket => {
 
 app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
+});
+
+app.post("/register-push-token", (req, res) => {
+	try {
+		const { userId, pushToken } = req.body;
+		userModel.findByIdAndUpdate(userId, { pushToken });
+		res.sendStatus(200);
+	} catch (err) {
+		console.log(err);
+		res.sendStatus(500);
+	}
 });
 
 app.post("/signup", async (req, res) => {
