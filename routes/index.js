@@ -91,8 +91,8 @@ io.on("connection", socket => {
 						user.userId.toString() === participants.receiver.toString()
 				);
 				if (receiverSocket) {
-					socket.emit("sendMessageRes", chat);
-					io.to(receiverSocket.id).emit("receiveMessage", message);
+					socket.emit("sendMessageRes", message);
+					io.to(receiverSocket.id).emit("receiveMessage", chat.messages[chat.messages.length - 1]);
 					chat.messages[chat.messages.length - 1].status = "delivered";
 					await chat.save();
 				} else {
