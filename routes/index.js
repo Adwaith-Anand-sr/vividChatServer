@@ -20,7 +20,7 @@ io.on("connection", socket => {
 			users.splice(existingUserIndex, 1);
 		}
 		users.push({ id: socket.id, userId });
-
+		socket.broadcast.emit("online", userId);
 		const offlineMessages = await offlineModel.find({ receiver: userId });
 		if (offlineMessages.length > 0) {
 			offlineMessages.forEach(async msg => {
@@ -49,7 +49,7 @@ io.on("connection", socket => {
 		}
 	});
 
-	socket.on("getUser", async (userId) => {
+	socket.on("getUser", async userId => {
 		try {
 			const user = await userModel.findById(userId);
 			socket.emit("getUserRes", user);
@@ -75,7 +75,7 @@ io.on("connection", socket => {
 		}
 	});
 
-	socket.on("sendMessage", async (dets) => {
+	socket.on("sendMessage", async dets => {
 		const { participants, message, chatId } = dets;
 		try {
 			let chat = await chatModel.findOne({ chatId: chatId });
@@ -130,21 +130,24 @@ io.on("connection", socket => {
 			const receiverSocket = users.find(
 				user => user.userId.toString() === chatPartnerId.toString()
 			);
+			console.log("userId", userId);
+			console.log("chatPartnerId", chatPartnerId);
+			console.log("receiverSocket", receiverSocket);
 			if (receiverSocket) {
-				io.to(receiverSocket.id).emit("typing", { chatPartnerId });
+				io.to(receiverSocket.id).emit("typing", chatPartnerId);
 			}
 		} catch (err) {
 			console.error("Error fetching typing status:", err);
 		}
 	});
-	
+
 	socket.on("typingStoped", async ({ userId, chatPartnerId }) => {
 		try {
 			const receiverSocket = users.find(
 				user => user.userId.toString() === chatPartnerId.toString()
 			);
 			if (receiverSocket) {
-				io.to(receiverSocket.id).emit("typingStoped", { chatPartnerId });
+				io.to(receiverSocket.id).emit("typingStoped", chatPartnerId);
 			}
 		} catch (err) {
 			console.error("Error fetching typing status:", err);
@@ -152,7 +155,11 @@ io.on("connection", socket => {
 	});
 
 	socket.on("disconnect", () => {
+		const user = users.find(
+			user => user.id === socket.id
+		);
 		users = users.filter(user => user.id !== socket.id);
+		socket.broadcast.emit("offline", user.userId);
 	});
 });
 
