@@ -20,7 +20,6 @@ io.on("connection", socket => {
 			users.splice(existingUserIndex, 1);
 		}
 		users.push({ id: socket.id, userId });
-		socket.broadcast.emit("online", userId);
 		const offlineMessages = await offlineModel.find({ receiver: userId });
 		if (offlineMessages.length > 0) {
 			offlineMessages.forEach(async msg => {
@@ -125,6 +124,14 @@ io.on("connection", socket => {
 		}
 	});
 
+	socket.on("checkOnlineStatus", id => {
+		const user = users.find(
+			user => user.userId.toString() === id.toString()
+		);
+		if(user) socket.emit("checkOnlineStatusRes", true)
+		else socket.emit("checkOnlineStatusRes", false)
+	});
+
 	socket.on("typing", async ({ userId, chatPartnerId }) => {
 		try {
 			const receiverSocket = users.find(
@@ -155,11 +162,7 @@ io.on("connection", socket => {
 	});
 
 	socket.on("disconnect", () => {
-		const user = users.find(
-			user => user.id === socket.id
-		);
 		users = users.filter(user => user.id !== socket.id);
-		socket.broadcast.emit("offline", user.userId);
 	});
 });
 
