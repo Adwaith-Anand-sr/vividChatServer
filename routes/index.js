@@ -10,6 +10,9 @@ const mongodbConfig = require("../config/mongoose.js");
 const userModel = require("../models/users.js");
 const chatModel = require("../models/chats.js");
 const offlineModel = require("../models/offlineMessage.js");
+const {
+	sendPushNotification
+} = require("../controller/sendPushNotification.js");
 
 let users = [];
 
@@ -92,7 +95,10 @@ io.on("connection", socket => {
 				);
 				if (receiverSocket) {
 					socket.emit("sendMessageRes", message);
-					io.to(receiverSocket.id).emit("receiveMessage", chat.messages[chat.messages.length - 1]);
+					io.to(receiverSocket.id).emit(
+						"receiveMessage",
+						chat.messages[chat.messages.length - 1]
+					);
 					chat.messages[chat.messages.length - 1].status = "delivered";
 					await chat.save();
 				} else {
@@ -125,11 +131,9 @@ io.on("connection", socket => {
 	});
 
 	socket.on("checkOnlineStatus", id => {
-		const user = users.find(
-			user => user.userId.toString() === id.toString()
-		);
-		if(user) socket.emit("checkOnlineStatusRes", true)
-		else socket.emit("checkOnlineStatusRes", false)
+		const user = users.find(user => user.userId.toString() === id.toString());
+		if (user) socket.emit("checkOnlineStatusRes", true);
+		else socket.emit("checkOnlineStatusRes", false);
 	});
 
 	socket.on("typing", async ({ userId, chatPartnerId }) => {
@@ -173,8 +177,20 @@ app.get("/health", (req, res) => {
 app.post("/register-push-token", (req, res) => {
 	try {
 		const { userId, pushToken } = req.body;
-		userModel.findByIdAndUpdate(userId, { pushToken });
-		res.sendStatus(200);
+
+		userModel
+			.findByIdAndUpdate(userId, { pushToken }, { new: true })
+			.then(updatedUser => {
+				if (updatedUser) {
+					res.sendStatus(200); // Successfully updated
+				} else {
+					res.sendStatus(404); // User not found
+				}
+			})
+			.catch(error => {
+				console.error("Error updating pushToken:", error);
+				res.sendStatus(500); // Internal server error
+			});
 	} catch (err) {
 		console.log(err);
 		res.sendStatus(500);
