@@ -60,20 +60,55 @@ io.on("connection", socket => {
 		const pageNumber = parseInt(page, 10) || 1;
 		const pageSize = parseInt(limit, 10) || 10;
 		try {
-			const users = await chatModel
-				.find({
-					$or: [
-						{ "participants.user1": userId },
-						{ "participants.user2": userId }
-					]
-				})
-				.sort({ "messages.timestamp": -1 })
-				.skip((pageNumber - 1) * pageSize)
-				.limit(pageSize);
+			let chats = await chatModel.aggregate([
+				{
+					$match: {
+						$or: [
+							{ "participants.user1": userId },
+							{ "participants.user2": userId }
+						]
+					}
+				},
+				{
+					$addFields: {
+						lastMessage: { $arrayElemAt: ["$messages", -1] }
+					}
+				},
+				{
+					$project: {
+						chatId: 1,
+						participants: {
+							user1: {
+								id: "$participants.user1",
+								dp: "$participants.user1Dets.dp"
+							},
+							user2: {
+								id: "$participants.user2",
+								dp: "$participants.user2Dets.dp"
+							}
+						},
+						lastMessage: {
+							sender: "$lastMessage.sender",
+							receiver: "$lastMessage.receiver",
+							message: "$lastMessage.message",
+							status: "$lastMessage.status",
+							timestamp: "$lastMessage.timestamp"
+						}
+					}
+				},
+				{
+					$sort: { "lastMessage.timestamp": -1 }
+				}
+			]).exec((err, chats) => {
+				if (err) {
+					console.error(err);
+					return;
+				}
 
-			// await chatModel.populate(users, {
-			// 	path: "participants.user1 participants.user2"
-			// });
+				console.log('chats : ', chats);
+			});
+		
+
 			console.log("users: ", users);
 			socket.emit("getUserChatListRes", users);
 		} catch (err) {

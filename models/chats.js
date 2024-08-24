@@ -3,7 +3,13 @@ const chatSchema = mongoose.Schema({
 	chatId: String,
 	participants: {
 		user1: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-		user2: { type: mongoose.Schema.Types.ObjectId, ref: "user" }
+		user2: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
+		user1Dets: {
+		   dp: String,
+		}
+		user2Dets: {
+		   dp: String,
+		}
 	},
 	messages: [
 		{
