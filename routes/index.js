@@ -17,7 +17,6 @@ const {
 const { Expo } = require("expo-server-sdk");
 const expo = new Expo();
 
-
 let users = [];
 
 io.on("connection", socket => {
@@ -27,7 +26,7 @@ io.on("connection", socket => {
 			users.splice(existingUserIndex, 1);
 		}
 		users.push({ id: socket.id, userId });
-		io.emit('userOfflineStatusUpdate', userId)
+		io.emit("userOfflineStatusUpdate", userId);
 		const offlineMessages = await offlineModel.find({ receiver: userId });
 		if (offlineMessages.length > 0) {
 			offlineMessages.forEach(async msg => {
@@ -53,6 +52,28 @@ io.on("connection", socket => {
 			socket.emit("getAllUsersRes", allUsers);
 		} catch (err) {
 			socket.emit("getAllUsersRes", []);
+		}
+	});
+
+	socket.on("getUserChatList", async ({ userId, page = 1, limit = 10 }) => {
+		const pageNumber = parseInt(page, 10) || 1;
+		const pageSize = parseInt(limit, 10) || 10;
+		try {
+			const users = await chatModel
+				.find({
+					$or: [
+						{ "participants.user1": userId },
+						{ "participants.user2": userId }
+					]
+				})
+				.sort({ "messages.timestamp": -1 }) // Assuming `messages` is an array and `timestamp` is the field for sorting
+				.skip((pageNumber - 1) * pageSize)
+				.limit(pageSize)
+				.populate("participants.user1 participants.user2"); // Populate user details if needed
+
+			socket.emit("getUserChatListRes", users);
+		} catch (err) {
+			socket.emit("getUserChatListRes", []);
 		}
 	});
 
@@ -100,7 +121,11 @@ io.on("connection", socket => {
 				);
 				const receiver = await userModel.findById(participants.receiver);
 				const sender = await userModel.findById(participants.sender);
-			   await sendPushNotification(receiver.pushToken, message, sender.username );
+				await sendPushNotification(
+					receiver.pushToken,
+					message,
+					sender.username
+				);
 				if (receiverSocket) {
 					socket.emit("sendMessageRes", message);
 					io.to(receiverSocket.id).emit(
@@ -174,9 +199,9 @@ io.on("connection", socket => {
 	});
 
 	socket.on("disconnect", () => {
-	   user = users.find(user => user.id === socket.id);
-	   console.log('user disconnect : ', user.userId)
-	   io.emit("userOfflineStatusUpdate", user.userId);
+		user = users.find(user => user.id === socket.id);
+		console.log("user disconnect : ", user.userId);
+		io.emit("userOfflineStatusUpdate", user.userId);
 		users = users.filter(user => user.id !== socket.id);
 	});
 });
