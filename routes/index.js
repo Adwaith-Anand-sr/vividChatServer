@@ -17,44 +17,6 @@ const {
 const { Expo } = require("expo-server-sdk");
 const expo = new Expo();
 
-app.get("/send-notification", async (req, res) => {
-	const pushToken = "ExponentPushToken[6PADrFEXP0Z0vGYYnO4o9S]"; // Expo push token from the query parameter
-	const message = "Hello from server!"; // Message from the query parameter
-	if (!Expo.isExpoPushToken(pushToken)) {
-		return res.status(400).send("Invalid Expo Push Token");
-	}
-
-	// Construct the message
-	const messages = [
-		{
-			to: "ExponentPushToken[6PADrFEXP0Z0vGYYnO4o9S]",
-			title: "Notification Title",
-			body: "Notification message body",
-			data: { key: "value" },
-			android: {
-				channelId: "default"
-			}
-		}
-	];
-
-	try {
-		// Send the notification
-		const ticketChunk = await expo.sendPushNotificationsAsync(messages);
-		console.log(ticketChunk);
-
-		return res.status(200).json({
-			success: true,
-			message: "Notification sent successfully!",
-			tickets: ticketChunk
-		});
-	} catch (error) {
-		console.error(error);
-		return res.status(500).json({
-			success: false,
-			message: "Failed to send notification"
-		});
-	}
-});
 
 let users = [];
 
@@ -65,8 +27,6 @@ io.on("connection", socket => {
 			users.splice(existingUserIndex, 1);
 		}
 		users.push({ id: socket.id, userId });
-		const user = await userModel.findById(userId);
-		console.log("user joined : ", user);
 		const offlineMessages = await offlineModel.find({ receiver: userId });
 		if (offlineMessages.length > 0) {
 			offlineMessages.forEach(async msg => {
@@ -76,7 +36,6 @@ io.on("connection", socket => {
 					{ $set: { "messages.$.status": "delivered" } }
 				);
 			});
-			await sendPushNotification(user.pushToken, offlineMessages);
 			await offlineModel.deleteMany({ receiver: userId });
 		}
 	});
@@ -139,7 +98,8 @@ io.on("connection", socket => {
 						user.userId.toString() === participants.receiver.toString()
 				);
 				const receiver = await userModel.findById(participants.receiver);
-			   await sendPushNotification(receiver.pushToken, message);
+				const sender = await userModel.findById(participants.sender);
+			   await sendPushNotification(receiver.pushToken, message, sender.username );
 				if (receiverSocket) {
 					socket.emit("sendMessageRes", message);
 					io.to(receiverSocket.id).emit(
@@ -213,6 +173,9 @@ io.on("connection", socket => {
 	});
 
 	socket.on("disconnect", () => {
+	   user = users.find(user => user.id === socket.id);
+	   console.log('user disconnect : ', user.userId)
+	   io.emit("userOfflineStatusUpdate", user.userId);
 		users = users.filter(user => user.id !== socket.id);
 	});
 });
