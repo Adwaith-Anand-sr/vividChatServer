@@ -63,8 +63,8 @@ io.on("connection", socket => {
 			const users = await chatModel
 				.find({
 					$or: [
-						{ "participants.user1": mongoose.Types.ObjectId(userId) },
-						{ "participants.user2": mongoose.Types.ObjectId(userId) }
+						{ "participants.user1": userId },
+						{ "participants.user2": userId }
 					]
 				})
 				.sort({ "messages.timestamp": -1 })
