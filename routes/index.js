@@ -69,20 +69,7 @@ io.on("connection", socket => {
 					}
 				},
 				{
-					$unwind: "$messages"
-				},
-				{
 					$sort: { "messages.timestamp": -1 }
-				},
-				{
-					$group: {
-						_id: "$_id",
-						participants: { $first: "$participants" },
-						lastMessage: { $first: "$messages" }
-					}
-				},
-				{
-					$sort: { "lastMessage.timestamp": -1 }
 				},
 				{
 					$skip: (pageNumber - 1) * pageSize
@@ -90,23 +77,11 @@ io.on("connection", socket => {
 				{
 					$limit: pageSize
 				},
-				{
-					$project: {
-						_id: 1,
-						participants: 1,
-						lastMessage: {
-							message: 1,
-							status: 1,
-							timestamp: 1,
-							sender: 1
-						}
-					}
-				}
 			]);
 
-			await chatModel.populate(users, {
-				path: "participants.user1 participants.user2 lastMessage.sender"
-			});
+			// await chatModel.populate(users, {
+			// 	path: "participants.user1 participants.user2"
+			// });
          console.log('users: ',  users)
 			socket.emit("getUserChatListRes", users);
 		} catch (err) {
