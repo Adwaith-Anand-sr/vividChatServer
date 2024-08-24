@@ -63,8 +63,8 @@ io.on("connection", socket => {
 				{
 					$match: {
 						$or: [
-							{ "participants.user1": userId },
-							{ "participants.user2": userId }
+							{ "participants.user1": mongoose.Types.ObjectId(userId) },
+							{ "participants.user2": mongoose.Types.ObjectId(userId) }
 						]
 					}
 				},
@@ -77,7 +77,6 @@ io.on("connection", socket => {
 				{
 					$group: {
 						_id: "$_id",
-						chatId: { $first: "$chatId" },
 						participants: { $first: "$participants" },
 						lastMessage: { $first: "$messages" }
 					}
@@ -90,13 +89,25 @@ io.on("connection", socket => {
 				},
 				{
 					$limit: pageSize
+				},
+				{
+					$project: {
+						_id: 1,
+						participants: 1,
+						lastMessage: {
+							message: 1,
+							status: 1,
+							timestamp: 1,
+							sender: 1
+						}
+					}
 				}
 			]);
-			
-			await chatModel.populate(users, {
-				path: "participants.user1 participants.user2 lastMessage.sender lastMessage.receiver"
-			});
 
+			await chatModel.populate(users, {
+				path: "participants.user1 participants.user2 lastMessage.sender"
+			});
+         console.log('users: ',  users)
 			socket.emit("getUserChatListRes", users);
 		} catch (err) {
 			socket.emit("getUserChatListRes", []);
