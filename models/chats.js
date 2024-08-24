@@ -6,7 +6,7 @@ const chatSchema = mongoose.Schema({
 		user2: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
 		user1Dets: {
 		   dp: String,
-		}
+		},
 		user2Dets: {
 		   dp: String,
 		}
