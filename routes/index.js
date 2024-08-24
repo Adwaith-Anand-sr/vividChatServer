@@ -27,6 +27,7 @@ io.on("connection", socket => {
 			users.splice(existingUserIndex, 1);
 		}
 		users.push({ id: socket.id, userId });
+		io.emit('userOfflineStatusUpdate', userId)
 		const offlineMessages = await offlineModel.find({ receiver: userId });
 		if (offlineMessages.length > 0) {
 			offlineMessages.forEach(async msg => {
@@ -187,19 +188,18 @@ app.get("/health", (req, res) => {
 app.post("/register-push-token", (req, res) => {
 	try {
 		const { userId, pushToken } = req.body;
-
 		userModel
 			.findByIdAndUpdate(userId, { pushToken }, { new: true })
 			.then(updatedUser => {
 				if (updatedUser) {
-					res.sendStatus(200); // Successfully updated
+					res.sendStatus(200);
 				} else {
-					res.sendStatus(404); // User not found
+					res.sendStatus(404);
 				}
 			})
 			.catch(error => {
 				console.error("Error updating pushToken:", error);
-				res.sendStatus(500); // Internal server error
+				res.sendStatus(500);
 			});
 	} catch (err) {
 		console.log(err);
@@ -275,20 +275,6 @@ app.post("/signin", async (req, res) => {
 				message: "INVALID_PASSWORD"
 			});
 		}
-	});
-});
-
-app.post("/getMassages", async (req, res) => {
-	const { userId, oppId } = req.body;
-	let messages = await chatModel.find({
-		$or: [
-			{ sender: userId, receiver: oppId },
-			{ sender: oppId, receiver: userId }
-		]
-	});
-	res.status(200).json({
-		success: true,
-		messages
 	});
 });
 
