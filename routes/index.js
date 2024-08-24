@@ -14,6 +14,46 @@ const {
 	sendPushNotification
 } = require("../controller/sendPushNotification.js");
 
+const { Expo } = require("expo-server-sdk");
+const expo = new Expo();
+
+app.get("/send-notification", async (req, res) => {
+	const pushToken = 'ExponentPushToken[6PADrFEXP0Z0vGYYnO4o9S]' // Expo push token from the query parameter
+	const message = "Hello from server!"; // Message from the query parameter
+	if (!Expo.isExpoPushToken(pushToken)) {
+		return res.status(400).send("Invalid Expo Push Token");
+	}
+
+	// Construct the message
+	const messages = [
+		{
+			to: pushToken,
+			sound: "default",
+			title: "New Notification",
+			body: message,
+			data: { withSome: "data" }
+		}
+	];
+
+	try {
+		// Send the notification
+		const ticketChunk = await expo.sendPushNotificationsAsync(messages);
+		console.log(ticketChunk);
+
+		return res.status(200).json({
+			success: true,
+			message: "Notification sent successfully!",
+			tickets: ticketChunk
+		});
+	} catch (error) {
+		console.error(error);
+		return res.status(500).json({
+			success: false,
+			message: "Failed to send notification"
+		});
+	}
+});
+
 let users = [];
 
 io.on("connection", socket => {
