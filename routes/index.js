@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookie = require("cookie-parser");
 const { v4: uuidv4 } = require("uuid");
+const mongoose = require("mongoose");
 
 const { server, app, io } = require("../server.js");
 const mongodbConfig = require("../config/mongoose.js");
