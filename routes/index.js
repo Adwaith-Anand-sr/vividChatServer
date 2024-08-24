@@ -18,7 +18,7 @@ const { Expo } = require("expo-server-sdk");
 const expo = new Expo();
 
 app.get("/send-notification", async (req, res) => {
-	const pushToken = 'ExponentPushToken[6PADrFEXP0Z0vGYYnO4o9S]' // Expo push token from the query parameter
+	const pushToken = "ExponentPushToken[6PADrFEXP0Z0vGYYnO4o9S]"; // Expo push token from the query parameter
 	const message = "Hello from server!"; // Message from the query parameter
 	if (!Expo.isExpoPushToken(pushToken)) {
 		return res.status(400).send("Invalid Expo Push Token");
@@ -27,11 +27,13 @@ app.get("/send-notification", async (req, res) => {
 	// Construct the message
 	const messages = [
 		{
-			to: pushToken,
-			sound: "default",
-			title: "New Notification",
-			body: message,
-			data: { withSome: "data" }
+			to: "ExponentPushToken[6PADrFEXP0Z0vGYYnO4o9S]",
+			title: "Notification Title",
+			body: "Notification message body",
+			data: { key: "value" },
+			android: {
+				channelId: "default"
+			}
 		}
 	];
 
@@ -63,6 +65,8 @@ io.on("connection", socket => {
 			users.splice(existingUserIndex, 1);
 		}
 		users.push({ id: socket.id, userId });
+		const user = await userModel.findById(userId);
+		console.log("user joined : ", user);
 		const offlineMessages = await offlineModel.find({ receiver: userId });
 		if (offlineMessages.length > 0) {
 			offlineMessages.forEach(async msg => {
@@ -72,6 +76,7 @@ io.on("connection", socket => {
 					{ $set: { "messages.$.status": "delivered" } }
 				);
 			});
+			await sendPushNotification(user.pushToken, offlineMessages);
 			await offlineModel.deleteMany({ receiver: userId });
 		}
 	});
@@ -133,6 +138,8 @@ io.on("connection", socket => {
 					user =>
 						user.userId.toString() === participants.receiver.toString()
 				);
+				const receiver = await userModel.findById(participants.receiver);
+			   await sendPushNotification(receiver.pushToken, message);
 				if (receiverSocket) {
 					socket.emit("sendMessageRes", message);
 					io.to(receiverSocket.id).emit(
