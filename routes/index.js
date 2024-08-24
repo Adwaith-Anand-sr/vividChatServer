@@ -59,32 +59,24 @@ io.on("connection", socket => {
 		const pageNumber = parseInt(page, 10) || 1;
 		const pageSize = parseInt(limit, 10) || 10;
 		try {
-			const users = await chatModel.aggregate([
-				{
-					$match: {
-						$or: [
-							{ "participants.user1": mongoose.Types.ObjectId(userId) },
-							{ "participants.user2": mongoose.Types.ObjectId(userId) }
-						]
-					}
-				},
-				{
-					$sort: { "messages.timestamp": -1 }
-				},
-				{
-					$skip: (pageNumber - 1) * pageSize
-				},
-				{
-					$limit: pageSize
-				},
-			]);
+			const users = await chatModel
+				.find({
+					$or: [
+						{ "participants.user1": mongoose.Types.ObjectId(userId) },
+						{ "participants.user2": mongoose.Types.ObjectId(userId) }
+					]
+				})
+				.sort({ "messages.timestamp": -1 })
+				.skip((pageNumber - 1) * pageSize)
+				.limit(pageSize);
 
 			// await chatModel.populate(users, {
 			// 	path: "participants.user1 participants.user2"
 			// });
-         console.log('users: ',  users)
+			console.log("users: ", users);
 			socket.emit("getUserChatListRes", users);
 		} catch (err) {
+			console.log(err);
 			socket.emit("getUserChatListRes", []);
 		}
 	});
