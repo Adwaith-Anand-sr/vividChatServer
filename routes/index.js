@@ -59,17 +59,43 @@ io.on("connection", socket => {
 		const pageNumber = parseInt(page, 10) || 1;
 		const pageSize = parseInt(limit, 10) || 10;
 		try {
-			const users = await chatModel
-				.find({
-					$or: [
-						{ "participants.user1": userId },
-						{ "participants.user2": userId }
-					]
-				})
-				.sort({ "messages.timestamp": -1 }) // Assuming `messages` is an array and `timestamp` is the field for sorting
-				.skip((pageNumber - 1) * pageSize)
-				.limit(pageSize)
-				.populate("participants.user1 participants.user2"); // Populate user details if needed
+			const users = await chatModel.aggregate([
+				{
+					$match: {
+						$or: [
+							{ "participants.user1": userId },
+							{ "participants.user2": userId }
+						]
+					}
+				},
+				{
+					$unwind: "$messages"
+				},
+				{
+					$sort: { "messages.timestamp": -1 }
+				},
+				{
+					$group: {
+						_id: "$_id",
+						chatId: { $first: "$chatId" },
+						participants: { $first: "$participants" },
+						lastMessage: { $first: "$messages" }
+					}
+				},
+				{
+					$sort: { "lastMessage.timestamp": -1 }
+				},
+				{
+					$skip: (pageNumber - 1) * pageSize
+				},
+				{
+					$limit: pageSize
+				}
+			]);
+			
+			await chatModel.populate(users, {
+				path: "participants.user1 participants.user2 lastMessage.sender lastMessage.receiver"
+			});
 
 			socket.emit("getUserChatListRes", users);
 		} catch (err) {
