@@ -56,7 +56,7 @@ io.on("connection", socket => {
 		}
 	});
 
-	socket.on("getUserChatList", async ({ userId, page = 1, limit = 10 }) => {
+	socket.on("getUserChatList", async ( userId ) => {
 		const pageNumber = parseInt(page, 10) || 1;
 		const pageSize = parseInt(limit, 10) || 10;
 		try {
