@@ -112,7 +112,7 @@ io.on("connection", socket => {
 		}
 	});
 
-	socket.on("readMessages", async ({ userId, chatId }) => {
+	socket.on("readMessages", async ({ userId, chatPartnerId, chatId }) => {
 		await chatModel.updateMany(
 			{
 				chatId,
@@ -120,7 +120,10 @@ io.on("connection", socket => {
 			},
 			{ $set: { "messages.$[].status": "read" } }
 		);
-		socket.emit("readMessages", { userId, chatId });
+		const receiverSocket = users.find(
+			user => user.userId.toString() === chatPartnerId.toString()
+		);
+		io.to(receiverSocket.id).emit("readMessages", { userId, chatId });
 	});
 
 	socket.on("sendMessage", async dets => {
