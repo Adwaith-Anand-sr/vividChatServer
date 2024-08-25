@@ -60,46 +60,22 @@ io.on("connection", socket => {
 		const pageNumber = parseInt(page, 10) || 1;
 		const pageSize = parseInt(limit, 10) || 10;
 		try {
-			const chats = await chatModel.aggregate([
-				{
-					$match: {
-						$or: [
-							{ "participants.user1": userId },
-							{ "participants.user2": userId }
-						]
-					}
-				},
-				{
-					$addFields: {
-						lastMessage: { $arrayElemAt: ["$messages", -1] }
-					}
-				},
-				{
-					$project: {
-						chatId: 1,
-						participants: {
-							user1: {
-								id: "$participants.user1",
-								dp: "$participants.user1Dets.dp"
-							},
-							user2: {
-								id: "$participants.user2",
-								dp: "$participants.user2Dets.dp"
-							}
-						},
-						lastMessage: {
-							sender: "$lastMessage.sender",
-							receiver: "$lastMessage.receiver",
-							message: "$lastMessage.message",
-							status: "$lastMessage.status",
-							timestamp: "$lastMessage.timestamp"
-						}
-					}
-				},
-				{
-					$sort: { "lastMessage.timestamp": -1 }
-				}
-			]);
+			const chats = await chatModel
+				.find({
+					$or: [
+						{ "participants.user1": userId },
+						{ "participants.user2": userId }
+					]
+				})
+				.populate("participants.user1")
+				.populate("participants.user2")
+				.select({
+					messages: { $slice: -1 }
+				})
+				.sort({ "messages.timestamp": -1 })
+				.skip((pageNumber - 1) * pageSize)
+				.limit(pageSize)
+				.exec();
 
 			console.log("users: ", chats);
 			socket.emit("getUserChatListRes", chats);
@@ -231,8 +207,9 @@ io.on("connection", socket => {
 	});
 
 	socket.on("disconnect", () => {
+		console.log("users: ", users);
 		user = users.find(user => user.id === socket.id);
-		console.log("user disconnect : ", user.userId);
+		console.log("user disconnect : ", user);
 		io.emit("userOfflineStatusUpdate", user.userId);
 		users = users.filter(user => user.id !== socket.id);
 	});

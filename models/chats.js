@@ -1,21 +1,32 @@
 const mongoose = require("mongoose");
+
 const chatSchema = mongoose.Schema({
-	chatId: String,
+	chatId: { type: String, required: true },
 	participants: {
-		user1: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-		user2: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-		user1Dets: {
-		   dp: String,
+		user1: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "user",
+			required: true
 		},
-		user2Dets: {
-		   dp: String,
+		user2: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "user",
+			required: true
 		}
 	},
 	messages: [
 		{
-			sender: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-			receiver: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-			message: String,
+			sender: {
+				type: mongoose.Schema.Types.ObjectId,
+				ref: "user",
+				required: true
+			},
+			receiver: {
+				type: mongoose.Schema.Types.ObjectId,
+				ref: "user",
+				required: true
+			},
+			message: { type: String, required: true },
 			status: {
 				type: String,
 				enum: ["sent", "delivered", "read"],

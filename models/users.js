@@ -4,6 +4,10 @@ const userSchema = mongoose.Schema({
 	password: String,
 	email: String,
 	pushToken: String,
+	dp: {
+	   type: String,
+	   default: null
+	}
 });
 
 module.exports = mongoose.model("user", userSchema);
