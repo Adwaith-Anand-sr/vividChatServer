@@ -73,11 +73,8 @@ io.on("connection", socket => {
 					messages: { $slice: -1 }
 				})
 				.sort({ "messages.timestamp": -1 })
-				.skip((pageNumber - 1) * pageSize)
-				.limit(pageSize)
 				.exec();
 
-			console.log("users: ", chats);
 			socket.emit("getUserChatListRes", chats);
 		} catch (err) {
 			console.log(err);
@@ -110,6 +107,10 @@ io.on("connection", socket => {
 			socket.emit("getChatMessagesResponse", []);
 		}
 	});
+
+   socket.on('readMesaages', async chatId =>{
+      
+   })
 
 	socket.on("sendMessage", async dets => {
 		const { participants, message, chatId } = dets;

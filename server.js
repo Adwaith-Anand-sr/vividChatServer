@@ -9,7 +9,7 @@ const io = new Server(server, {
 	cors: {
 		origin: [
 			"exp://127.0.0.1:8081",
-			"exp://10.253.248.66:8081" //local device (changeable)
+			"exp://100.123.11.163:8081" //local device (changeable)
 		]
 	}
 });
@@ -22,7 +22,7 @@ app.use(
 	cors({
 		origin: [
 			"exp://127.0.0.1:8081", 
-			"exp://10.253.248.66:8081" 
+			"exp://100.123.11.163:8081" //local device (changeable)
 		]
 	})
 );
