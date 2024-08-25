@@ -57,8 +57,6 @@ io.on("connection", socket => {
 	});
 
 	socket.on("getUserChatList", async ( userId ) => {
-		const pageNumber = parseInt(page, 10) || 1;
-		const pageSize = parseInt(limit, 10) || 10;
 		try {
 			const chats = await chatModel
 				.find({
