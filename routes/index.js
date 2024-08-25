@@ -207,10 +207,8 @@ io.on("connection", socket => {
 	});
 
 	socket.on("disconnect", () => {
-		console.log("users: ", users);
 		user = users.find(user => user.id === socket.id);
-		console.log("user disconnect : ", user);
-		io.emit("userOfflineStatusUpdate", user.userId);
+		if (user && user.userId) io.emit("userOfflineStatusUpdate", user.userId);
 		users = users.filter(user => user.id !== socket.id);
 	});
 });
