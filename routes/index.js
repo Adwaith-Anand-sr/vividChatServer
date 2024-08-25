@@ -31,7 +31,7 @@ io.on("connection", socket => {
 		const offlineMessages = await offlineModel.find({ receiver: userId });
 		if (offlineMessages.length > 0) {
 			offlineMessages.forEach(async msg => {
-				socket.emit("receiveMessage", msg.message);
+				socket.emit("receiveMessage", {msg.message, msg.chatId} );
 				await chatModel.updateOne(
 					{ chatId: msg.chatId, "messages.message": msg.message },
 					{ $set: { "messages.$.status": "delivered" } }
