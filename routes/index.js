@@ -56,7 +56,7 @@ io.on("connection", socket => {
 		}
 	});
 
-	socket.on("getUserChatList", async ( userId ) => {
+	socket.on("getUserChatList", async userId => {
 		try {
 			const chats = await chatModel
 				.find({
@@ -106,9 +106,7 @@ io.on("connection", socket => {
 		}
 	});
 
-   socket.on('readMesaages', async chatId =>{
-      
-   })
+	socket.on("readMesaages", async chatId => {});
 
 	socket.on("sendMessage", async dets => {
 		const { participants, message, chatId } = dets;
@@ -135,10 +133,10 @@ io.on("connection", socket => {
 				);
 				if (receiverSocket) {
 					socket.emit("sendMessageRes", message);
-					io.to(receiverSocket.id).emit(
-						"receiveMessage",
-						chat.messages[chat.messages.length - 1]
-					);
+					io.to(receiverSocket.id).emit("receiveMessage", {
+						message: chat.messages[chat.messages.length - 1],
+						chatId: chatId
+					});
 					chat.messages[chat.messages.length - 1].status = "delivered";
 					await chat.save();
 				} else {
