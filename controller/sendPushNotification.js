@@ -2,7 +2,7 @@ const { Expo } = require("expo-server-sdk");
 
 let expo = new Expo();
 
-async function sendPushNotification(pushToken, message, title) {
+async function sendPushNotification(pushToken, username, message, title) {
 	let messages = [];
 	if (!Expo.isExpoPushToken(pushToken)) {
 		console.error(`Push token ${pushToken} is not a valid Expo push token`);
@@ -14,7 +14,7 @@ async function sendPushNotification(pushToken, message, title) {
 		title: title || "message",
 		sound: "default",
 		body: message,
-		data: { withSome: "data" },
+		data: { withSome: "data", username: username },
 		android: {
 			channelId: "default"
 		}

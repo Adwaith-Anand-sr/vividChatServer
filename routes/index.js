@@ -112,7 +112,16 @@ io.on("connection", socket => {
 		}
 	});
 
-	socket.on("readMesaages", async chatId => {});
+	socket.on("readMessages", async ({ userId, chatId }) => {
+		await chatModel.updateMany(
+			{
+				chatId,
+				"messages.receiver": userId
+			},
+			{ $set: { "messages.$[].status": "read" } }
+		);
+		socket.emit("readMessages", { userId, chatId });
+	});
 
 	socket.on("sendMessage", async dets => {
 		const { participants, message, chatId } = dets;
@@ -134,6 +143,7 @@ io.on("connection", socket => {
 				const sender = await userModel.findById(participants.sender);
 				await sendPushNotification(
 					receiver.pushToken,
+					receiver.username,
 					message,
 					sender.username
 				);
