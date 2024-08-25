@@ -123,7 +123,8 @@ io.on("connection", socket => {
 		const receiverSocket = users.find(
 			user => user.userId.toString() === chatPartnerId.toString()
 		);
-		io.to(receiverSocket.id).emit("readMessages", { userId, chatId });
+		console.log('receiverSocket: ', receiverSocket)
+		if(receiverSocket) io.to(receiverSocket.id).emit("readMessages", { userId, chatId });
 	});
 
 	socket.on("sendMessage", async dets => {
