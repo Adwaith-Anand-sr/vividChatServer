@@ -173,7 +173,7 @@ io.on("connection", socket => {
 					await chatModel.updateOne(
 						{
 							chatId: chatId,
-							"messages.message": msg.message
+							"messages.message": chat.messages[chat.messages.length - 1]
 						},
 						{ $set: { "messages.$.status": "delivered" } }
 					);
