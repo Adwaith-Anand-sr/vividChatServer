@@ -112,18 +112,20 @@ io.on("connection", socket => {
 		}
 	});
 
-	socket.on("messageReceived", async chatId => {
-		const receiverSocket = users.find(user => user.id === socket.id);
-		await chatModel.updateMany(
-			{
-				chatId,
-				"messages.receiver": receiverSocket.userId
-			},
-			{ $set: { "messages.$[].status": "delivered" } }
-		);
-		console.log("receiverSocket2: ", receiverSocket);
-		if (receiverSocket) io.emit("messageReceived", chatId);
-	});
+// 	socket.on("messageReceived", async chatId => {
+// 		const receiverSocket = users.find(user => user.id === socket.id);
+// 		if (receiverSocket) {
+// 		   await chatModel.updateMany(
+// 			{
+// 				chatId,
+// 				"messages.receiver": receiverSocket.userId
+// 			},
+// 			{ $set: { "messages.$[].status": "delivered" } }
+// 		);
+// 		console.log("receiverSocket2: ", receiverSocket);
+// 		   io.emit("messageReceived", chatId);
+// 		}
+// 	});
 
 	socket.on("readMessages", async ({ userId, chatPartnerId, chatId }) => {
 		await chatModel.updateMany(
