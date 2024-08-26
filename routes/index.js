@@ -170,17 +170,11 @@ io.on("connection", socket => {
 						message: chat.messages[chat.messages.length - 1],
 						chatId: chatId
 					});
-					await chatModel.updateOne(
-						{
-							chatId: chatId,
-							"messages.message": chat.messages[chat.messages.length - 1]
-						},
-						{ $set: { "messages.$.status": "delivered" } }
-					);
 					socket.emit("sendMessageRes", message);
 					socket.emit("messageSended", { message, receiver, chatId });
 					chat.messages[chat.messages.length - 1].status = "delivered";
 					await chat.save();
+					console.log(chat.messages[chat.messages.length - 1])
 				} else {
 					await offlineModel.create({
 						sender: participants.sender,
