@@ -31,9 +31,12 @@ io.on("connection", socket => {
 		const offlineMessages = await offlineModel.find({ receiver: userId });
 		if (offlineMessages.length > 0) {
 			offlineMessages.forEach(async msg => {
+			   let usr = await userModel.findById(msg.sender);
+			   let senderUsername= usr.username
 				socket.emit("receiveMessage", {
 					message: msg,
-					chatId: [msg.sender, msg.receiver].sort().join("_")
+					chatId: [msg.sender, msg.receiver].sort().join("_"),
+					senderUsername
 				});
 				await chatModel.updateOne(
 					{
@@ -112,20 +115,6 @@ io.on("connection", socket => {
 		}
 	});
 
-// 	socket.on("messageReceived", async chatId => {
-// 		const receiverSocket = users.find(user => user.id === socket.id);
-// 		if (receiverSocket) {
-// 		   await chatModel.updateMany(
-// 			{
-// 				chatId,
-// 				"messages.receiver": receiverSocket.userId
-// 			},
-// 			{ $set: { "messages.$[].status": "delivered" } }
-// 		);
-// 		console.log("receiverSocket2: ", receiverSocket);
-// 		   io.emit("messageReceived", chatId);
-// 		}
-// 	});
 
 	socket.on("readMessages", async ({ userId, chatPartnerId, chatId }) => {
 		await chatModel.updateMany(
@@ -170,7 +159,8 @@ io.on("connection", socket => {
 					io.to(receiverSocket.id).emit("receiveMessage", {
 					   participants,
 						message: chat.messages[chat.messages.length - 1],
-						chatId: chatId
+						chatId: chatId,
+					   senderUsername: sender.username,
 					});
 					socket.emit("messageSended", { participants, chatId });
 					chat.messages[chat.messages.length - 1].status = "delivered";
