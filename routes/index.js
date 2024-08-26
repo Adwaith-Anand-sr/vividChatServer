@@ -112,10 +112,8 @@ io.on("connection", socket => {
 		}
 	});
 
-	socket.on("messageReceived", async (chatId) => {
-		const receiverSocket = users.find(
-			user => user.id === socket.id
-		);
+	socket.on("messageReceived", async chatId => {
+		const receiverSocket = users.find(user => user.id === socket.id);
 		await chatModel.updateMany(
 			{
 				chatId,
@@ -123,11 +121,11 @@ io.on("connection", socket => {
 			},
 			{ $set: { "messages.$[].status": "delivered" } }
 		);
-		console.log('receiverSocket2: ', receiverSocket)
-		if(receiverSocket) io.emit("messageReceived", chatId );
+		console.log("receiverSocket2: ", receiverSocket);
+		if (receiverSocket) io.emit("messageReceived", chatId);
 	});
-   
-   socket.on("readMessages", async ({ userId, chatPartnerId, chatId }) => {
+
+	socket.on("readMessages", async ({ userId, chatPartnerId, chatId }) => {
 		await chatModel.updateMany(
 			{
 				chatId,
@@ -138,8 +136,9 @@ io.on("connection", socket => {
 		const receiverSocket = users.find(
 			user => user.userId.toString() === chatPartnerId.toString()
 		);
-		console.log('receiverSocket: ', receiverSocket)
-		if(receiverSocket) io.to(receiverSocket.id).emit("readMessages", { userId, chatId });
+		console.log("receiverSocket: ", receiverSocket);
+		if (receiverSocket)
+			io.to(receiverSocket.id).emit("readMessages", { userId, chatId });
 	});
 
 	socket.on("sendMessage", async dets => {
@@ -147,7 +146,7 @@ io.on("connection", socket => {
 		try {
 			let chat = await chatModel.findOne({ chatId: chatId });
 			if (chat) {
-				let msg = chat.messages.push({
+				chat.messages.push({
 					sender: participants.sender,
 					receiver: participants.receiver,
 					message,
@@ -167,12 +166,19 @@ io.on("connection", socket => {
 					sender.username
 				);
 				if (receiverSocket) {
-					socket.emit("sendMessageRes", message);
-					socket.emit('messageSended', { msg, receiver, chatId })
 					io.to(receiverSocket.id).emit("receiveMessage", {
 						message: chat.messages[chat.messages.length - 1],
 						chatId: chatId
 					});
+					await chatModel.updateOne(
+						{
+							chatId: chatId,
+							"messages.message": msg.message
+						},
+						{ $set: { "messages.$.status": "delivered" } }
+					);
+					socket.emit("sendMessageRes", message);
+					socket.emit("messageSended", { message, receiver, chatId });
 					chat.messages[chat.messages.length - 1].status = "delivered";
 					await chat.save();
 				} else {
