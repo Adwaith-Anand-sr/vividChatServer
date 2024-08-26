@@ -136,7 +136,6 @@ io.on("connection", socket => {
 		const receiverSocket = users.find(
 			user => user.userId.toString() === chatPartnerId.toString()
 		);
-		console.log("receiverSocket: ", receiverSocket);
 		if (receiverSocket)
 			io.to(receiverSocket.id).emit("readMessages", { userId, chatId });
 	});
@@ -167,11 +166,11 @@ io.on("connection", socket => {
 				);
 				if (receiverSocket) {
 					io.to(receiverSocket.id).emit("receiveMessage", {
+					   participants,
 						message: chat.messages[chat.messages.length - 1],
 						chatId: chatId
 					});
-					socket.emit("sendMessageRes", message);
-					socket.emit("messageSended", { message, receiver, chatId });
+					socket.emit("messageSended", { participants, chatId });
 					chat.messages[chat.messages.length - 1].status = "delivered";
 					await chat.save();
 					console.log(chat.messages[chat.messages.length - 1])

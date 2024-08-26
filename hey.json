@@ -1,0 +1,34 @@
+
+LOG {
+   "__v": 0,
+   "_id": "66c01cb507bff728d16f3cbd",
+   "chats": [],
+   "dp": null,
+   "email": "adwaithanand1818@gmail.com",
+   "groups": [],
+   "password": "$2a$10$gRXNvQyw3oIQDKBEQkNSGeIe7PC13UTSCqvbRNstD6orYWOJHAJV2",
+   "pushToken": "ExponentPushToken[m2120zFm9378S1qLiOnG0t]",
+   "recent": [],
+   "username": "adwaithanand"
+}
+
+
+
+
+LOG  handleMessageSended: {
+   "_id": "66cc23205341192aeda5717a",
+   "message": "Helooo",
+   "receiver": "66c01cb507bff728d16f3cbd",
+   "sender": "66bf88eef7f5386bd11b2679",
+   "status": "sent",
+   "timestamp": "2024-08-26T06:39:28.757Z"
+}
+LOG    handleMessageSended {
+   "_id": "66cc23205341192aeda5717a",
+   "message": "Helooo",
+   "receiver": "66c01cb507bff728d16f3cbd",
+   "sender": "66bf88eef7f5386bd11b2679",
+   "status": "sent",
+   "timestamp": "2024-08-26T06:39:28.757Z"
+}
+
