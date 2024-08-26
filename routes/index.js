@@ -116,7 +116,6 @@ io.on("connection", socket => {
 		const receiverSocket = users.find(
 			user => user.id === socket.id
 		);
-		
 		await chatModel.updateMany(
 			{
 				chatId,
@@ -148,7 +147,7 @@ io.on("connection", socket => {
 		try {
 			let chat = await chatModel.findOne({ chatId: chatId });
 			if (chat) {
-				chat.messages.push({
+				let msg = chat.messages.push({
 					sender: participants.sender,
 					receiver: participants.receiver,
 					message,
@@ -169,6 +168,7 @@ io.on("connection", socket => {
 				);
 				if (receiverSocket) {
 					socket.emit("sendMessageRes", message);
+					socket.emit('messageSended', { msg, receiver, chatId })
 					io.to(receiverSocket.id).emit("receiveMessage", {
 						message: chat.messages[chat.messages.length - 1],
 						chatId: chatId
